@@ -1,10 +1,12 @@
 package com.example.news1;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.Xml;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -19,8 +21,11 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private RecyclerView news_RV;
     private ArrayList<News> news = new ArrayList<>();
+
+    private NewsAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +34,13 @@ public class MainActivity extends AppCompatActivity {
 
         news_RV = findViewById(R.id.news_RV);
 
+        adapter = new NewsAdapter();
+
+        GetNews getNews = new GetNews();
+        getNews.execute();
+
+        news_RV.setAdapter(adapter);
+        news_RV.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL,false));
     }
     private class GetNews extends AsyncTask<Void,Void,Void>{
 
@@ -45,10 +57,18 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
 
+        @Override
+        protected void onPostExecute(Void unused) {
+            super.onPostExecute(unused);
+            adapter.setNews(news);
+        }
+
         private  InputStream getInputstream(){
+            Log.d(TAG, "getInputstream: getting Input Stream");
             try {
                 URL url =new URL("https://www.autosport.com/rss/all/news/");
                 URLConnection connection = url.openConnection();
+                connection.getRequestProperty("GET");
                 connection.setDoInput(true);
                 return connection.getInputStream();
 
@@ -58,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
         private  void  initXmlPullParser(InputStream inputStream) throws XmlPullParserException, IOException {
+            Log.d(TAG, "initXmlPullParser: starting parser");
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES,false);
             parser.setInput(inputStream,null);
@@ -115,6 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
         }
         private  String getInfo(XmlPullParser parser , String tag) throws XmlPullParserException, IOException {
+            Log.d(TAG, "getInfo: getting info");
             parser.require(XmlPullParser.START_TAG,null,tag);
 
             String content ="";
